@@ -17,12 +17,23 @@ const run = async () => {
         const taskCollection = client.db('Taskito').collection('Task');
         console.log('mongodb connected');
 
-        //get all in task 
+        //get all incomplete task 
         app.get('/taskes', async(req,res)=>{
-            const taskes = await taskCollection.find({}).toArray();
+            const taskes = await taskCollection.find({ status: "incomplete" }).toArray();
             res.send(taskes);
         });
-        
+        // get task by id
+        app.get('/task/:id', async(req, res)=>{
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const result = await taskCollection.findOne(filter);
+            res.send(result);
+        })
+        //get all competed task
+        app.get('/competed/tasks', async(req, res)=>{
+            const completedtaskes = await taskCollection.find({ status: "completed" }).toArray();
+            res.send(completedtaskes);
+        });
 
         // Add a new task
         app.post('/new/task', async(req, res)=>{
@@ -33,23 +44,26 @@ const run = async () => {
         });
 
         // Update task  
-        app.patch('/update/task', async(req, res)=>{
+        app.patch('/update/task/:id', async(req, res)=>{
             const id = req.params.id;
-            const task = req.body;
+            const task = req.body.newtask;
+            console.log(id, task);
             const filter = { _id: ObjectId(id) };
-            const options = { upsert: true };
             const updateDoc = {
-                $set: task
+                $set: {
+                    task
+                }
             };
-            const result = await taskCollection.updateOne(filter,options,updateDoc);
+            const result = await taskCollection.updateOne(filter,updateDoc);
             res.send(result)
         });
 
 
         // update status of task
-        app.patch('/update/status', async(req, res)=>{
+        app.patch('/update/status/:id', async(req, res)=>{
             const id = req.params.id;
-            const taskStatus = req.body;
+            const taskStatus = req.body.status;
+            console.log(id, taskStatus);
             const filter = { _id: ObjectId(id) };
             const updateDoc = {
                 $set: {
@@ -63,14 +77,14 @@ const run = async () => {
     }
     finally{
 
-    }
-}
+    };
+};
 run().catch(console.dir)
 
 app.get('/', (req, res) => {
     res.send('Welcome Taslito')
-})
+});
 
 app.listen(port, () => {
     console.log(`taskito listening on port ${port}`)
-})
+});
